@@ -54,6 +54,6 @@ jobs:
             docker compose up -d
             
             echo "==> Synchronizing Prisma database schema..."
-            chmod +x db_push.sh && ./db_push.sh || true
+            docker compose exec -T web node node_modules/prisma/build/index.js db push --accept-data-loss || true
             
             echo "==> Deployment completed successfully!"
