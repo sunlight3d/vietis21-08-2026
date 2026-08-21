@@ -1,0 +1,59 @@
+name: Deploy to VPS
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Deploy to VPS via SSH
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          port: ${{ secrets.VPS_PORT }}
+          script: |
+            set -e
+            echo "==> Deploying VietIS 21-08-2026 application to VPS..."
+            
+            DEPLOY_DIR="/opt/task_app_21_08_2026"
+            
+            if [ ! -d "$DEPLOY_DIR/.git" ]; then
+              echo "==> Cloning repository..."
+              rm -rf "$DEPLOY_DIR"
+              git clone https://github.com/sunlight3d/vietis21-08-2026.git "$DEPLOY_DIR"
+            fi
+            
+            cd "$DEPLOY_DIR"
+            
+            echo "==> Pulling latest changes from main branch..."
+            git fetch origin main
+            git reset --hard origin/main
+            
+            echo "==> Setting up environment file..."
+            cat << 'EOF' > .env
+            DATABASE_URL="postgresql://postgres:Abc123456789@postgres:5432/TaskDB?schema=public"
+            GOOGLE_API_KEY="${{ secrets.GOOGLE_API_KEY }}"
+            JWT_SECRET="vps_super_secret_jwt_key_2026"
+            OLLAMA_BASE_URL="http://host.docker.internal:11434"
+            EOF
+            
+            echo "==> Cleaning up dangling docker images to maintain disk space..."
+            docker system prune -f || true
+            
+            echo "==> Building and starting services..."
+            docker compose build web
+            docker compose up -d
+            
+            echo "==> Synchronizing Prisma database schema..."
+            chmod +x db_push.sh && ./db_push.sh || true
+            
+            echo "==> Deployment completed successfully!"

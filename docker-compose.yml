@@ -23,6 +23,11 @@ services:
       - "3002:3000"
     environment:
       - DATABASE_URL=postgresql://postgres:Abc123456789@postgres:5432/TaskDB?schema=public
+      - OLLAMA_BASE_URL=http://host.docker.internal:11434
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    env_file:
+      - .env
     depends_on:
       - postgres
     restart: unless-stopped
