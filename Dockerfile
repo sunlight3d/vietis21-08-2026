@@ -25,6 +25,7 @@ COPY --from=deps /app/prisma ./prisma
 
 # Next.js telemetry is disabled
 ENV NEXT_TELEMETRY_DISABLED=1
+ENV NEXT_OUTPUT_STANDALONE="true"
 ENV NODE_OPTIONS="--max-old-space-size=1024"
 
 RUN npm run build
