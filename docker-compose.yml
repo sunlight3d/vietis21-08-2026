@@ -1,0 +1,33 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: pgvector/pgvector:pg15
+    container_name: task_db
+    environment:
+      POSTGRES_DB: TaskDB
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: Abc123456789
+    ports:
+      - "5433:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    restart: unless-stopped
+
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: task_web
+    ports:
+      - "3002:3000"
+    environment:
+      - DATABASE_URL=postgresql://postgres:Abc123456789@postgres:5432/TaskDB?schema=public
+    depends_on:
+      - postgres
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
+    external: true
+    name: task-app_postgres_data
